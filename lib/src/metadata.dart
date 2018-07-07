@@ -186,42 +186,6 @@ class Group {
   const Group(this.urlPrefix);
 }
 
-/// An annotation to define a target which must be bound
-/// to the URL of its group.
-///
-/// If [pathSuffix] is provided, only requests that match
-/// the suffix will be handled. [methods] are the HTTP
-/// methods accepted by this target, and defaults to GET.
-/// The [encoding] is the default encoding that will be used to
-/// parse the request. The [responseType] is the content type
-/// of the response. If it's not provided, the framework
-/// will generate it based on the value returned by the method;
-/// The [statusCode] is the default status of the response, and
-/// defaults to 200. If [allowMultipartRequest]
-/// is true, then the Route is allowed to receive multipart
-/// requests (file upload).
-class DefaultRoute implements RequestTarget {
-  final String pathSuffix;
-
-  final List<String> methods;
-
-  final String responseType;
-
-  final int statusCode;
-
-  final bool allowMultipartRequest;
-
-  final conv.Encoding encoding;
-
-  const DefaultRoute(
-      {this.pathSuffix,
-      this.methods: const [GET],
-      this.responseType,
-      this.statusCode: 200,
-      this.allowMultipartRequest: false,
-      this.encoding: conv.UTF8});
-}
-
 /// An annotation to include handlers from other libraries
 class Install {
   final String urlPrefix;

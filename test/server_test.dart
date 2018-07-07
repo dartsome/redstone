@@ -24,7 +24,7 @@ import 'services/inspect.dart';
 
 void main() {
   showErrorPage = false;
-  //setupConsoleLog(Level.ALL);
+  setupConsoleLog(Level.ALL);
 
   group("Routes:", () {
     setUp(() => redstoneSetUp([#routes]));
@@ -77,12 +77,12 @@ void main() {
     });
 
     test("compound group path matching", () async {
-      var req = new MockRequest("/mixed/path/subpath");
-      var req2 = new MockRequest("/mixed/path/anotherpath");
-      var req3 = new MockRequest("/mixed/paths");
-      var req4 = new MockRequest("/mixed");
-      var req5 = new MockRequest("/mixed.json");
-      var req6 = new MockRequest("/mixed", method: POST);
+      var req = new MockRequest("/mixed/group/path/subpath");
+      var req2 = new MockRequest("/mixed/group/path/anotherpath");
+      var req3 = new MockRequest("/mixed/group/paths");
+      var req4 = new MockRequest("/mixed/group");
+      var req5 = new MockRequest("/mixed/group.json");
+      var req6 = new MockRequest("/mixed/group", method: POST);
       var req7 = new MockRequest("/mixed/change_status_code");
       var req8 = new MockRequest("/mixed/info");
       var req9 = new MockRequest("/mixed/version");

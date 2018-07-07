@@ -6,8 +6,6 @@ import 'dart:math';
 
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:route_hierarchical/url_template.dart';
-import 'package:route_hierarchical/url_matcher.dart';
 import 'package:stack_trace/stack_trace.dart' as st;
 
 import 'server_context.dart';
@@ -16,7 +14,6 @@ import 'request_context.dart';
 import 'request.dart';
 import 'request_parser.dart';
 import 'response_writer.dart';
-import 'dynamic_map.dart';
 import 'logger.dart';
 
 const String serverSignature = "dart:io with Redstone.dart/Shelf";
@@ -28,10 +25,8 @@ class Router {
   bool logSetUp;
 
   _TargetListBuilder _targetListBuilder = new _TargetListBuilder();
-  _InterceptorListBuilder _interceptorListBuilder =
-      new _InterceptorListBuilder();
-  _ErrorHandlerMapBuilder _errorHandlerMapBuilder =
-      new _ErrorHandlerMapBuilder();
+  _InterceptorListBuilder _interceptorListBuilder = new _InterceptorListBuilder();
+  _ErrorHandlerMapBuilder _errorHandlerMapBuilder = new _ErrorHandlerMapBuilder();
 
   List<_Target> _targets;
   List<_Interceptor> _interceptors;
@@ -54,21 +49,16 @@ class Router {
 
   Future dispatchRequest(RequestParser request) async {
     var ctx = new RequestContext(request);
-    return runZoned(
-        () => shelf_io.handleRequest(request.httpRequest, _shelfHandler),
+    return runZoned(() => shelf_io.handleRequest(request.httpRequest, _shelfHandler),
         zoneValues: {REQUEST_CONTEXT_KEY: ctx});
   }
 
   void _buildShelfHandler() {
     var pipeline = new shelf.Pipeline().addMiddleware(_middleware);
-    var forwardPipeline =
-        new shelf.Pipeline().addMiddleware(_forwardMiddleware);
-    _serverCtx.shelfContext.middlewares
-        .forEach((m) => pipeline = pipeline.addMiddleware(m));
+    var forwardPipeline = new shelf.Pipeline().addMiddleware(_forwardMiddleware);
+    _serverCtx.shelfContext.middlewares.forEach((m) => pipeline = pipeline.addMiddleware(m));
     if (_serverCtx.shelfContext.handler != null) {
-      var cascade = new shelf.Cascade()
-          .add(_handler)
-          .add(_serverCtx.shelfContext.handler);
+      var cascade = new shelf.Cascade().add(_handler).add(_serverCtx.shelfContext.handler);
       _shelfHandler = pipeline.addHandler(cascade.handler);
       _forwardShelfHandler = forwardPipeline.addHandler(cascade.handler);
     } else {
@@ -79,10 +69,9 @@ class Router {
 
   shelf.Handler _middleware(shelf.Handler innerHandler) {
     return (shelf.Request req) {
-      _ChainImpl chain = new _ChainImpl(_targets, _interceptors, _errorHandlers,
-          _forwardShelfHandler, showErrorPage);
+      _ChainImpl chain = new _ChainImpl(_targets, _interceptors, _errorHandlers, _forwardShelfHandler, showErrorPage);
       currentContext.chain = chain;
-      var completer = new Completer();
+      var completer = new Completer<shelf.Response>();
 
       st.Chain.capture(() async {
         try {
@@ -107,18 +96,15 @@ class Router {
       });
 
       return completer.future.then((shelf.Response response) {
-        redstoneLogger.fine(
-            "Request for ${req.url} returned status ${response.statusCode}");
-        return response
-            .change(headers: const {HttpHeaders.SERVER: serverSignature});
+        redstoneLogger.fine("Request for ${req.url} returned status ${response.statusCode}");
+        return response.change(headers: const {HttpHeaders.SERVER: serverSignature});
       });
     };
   }
 
   shelf.Handler _forwardMiddleware(shelf.Handler innerHandler) {
     return (shelf.Request req) async {
-      _ChainImpl chain = new _ChainImpl(
-          _targets, const [], _errorHandlers, _forwardShelfHandler, false);
+      _ChainImpl chain = new _ChainImpl(_targets, const [], _errorHandlers, _forwardShelfHandler, false);
       var currentChain = currentContext.chain;
       var currentRequest = currentContext.request.shelfRequest;
       currentContext.chain = chain;
@@ -141,11 +127,9 @@ class Router {
     return (currentContext.chain as _ChainImpl)._start();
   }
 
-  void _loadHandlers(
-      [String pathPrefix, List<int> chainIdxByLevel, LibraryMetadata lib]) {
+  void _loadHandlers([String pathPrefix, List<int> chainIdxByLevel, LibraryMetadata lib]) {
     if (lib == null) {
-      _serverCtx.serverMetadata.rootLibraries
-          .forEach((l) => _loadHandlers(null, [], l));
+      _serverCtx.serverMetadata.rootLibraries.forEach((l) => _loadHandlers(null, [], l));
 
       _loadDynamicHandlers();
       return;
@@ -162,9 +146,7 @@ class Router {
     }
 
     if (libPathPrefix != null) {
-      pathPrefix = pathPrefix != null
-          ? _joinUrl(pathPrefix, libPathPrefix)
-          : libPathPrefix;
+      pathPrefix = pathPrefix != null ? _joinUrl(pathPrefix, libPathPrefix) : libPathPrefix;
     }
 
     _getTargets(pathPrefix, lib);
@@ -172,30 +154,21 @@ class Router {
     _getErrorHandlers(pathPrefix, lib);
 
     if (lib.dependencies.isNotEmpty) {
-      lib.dependencies
-          .forEach((l) => _loadHandlers(pathPrefix, chainIdxByLevel, l));
+      lib.dependencies.forEach((l) => _loadHandlers(pathPrefix, chainIdxByLevel, l));
     }
   }
 
   void _loadDynamicHandlers() {
-    _serverCtx.serverMetadata.routes.where((r) => r.library == null).forEach(
-        (r) => _targetListBuilder.add("/", new UrlTemplate(r.conf.urlTemplate),
-            r.conf.methods, _serverCtx.routeInvokers[r]));
+    _serverCtx.serverMetadata.routes.where((r) => r.library == null).forEach((r) =>
+        _targetListBuilder.add("/", new UrlTemplate(r.conf.urlTemplate), r.conf.methods, _serverCtx.routeInvokers[r]));
 
-    _interceptorListBuilder.add(_serverCtx.serverMetadata.interceptors
-        .where((i) => i.library == null)
-        .map((i) => new _Interceptor(new RegExp(i.conf.urlPattern),
-            [i.conf.chainIdx], _serverCtx.interceptorInvokers[i])));
+    _interceptorListBuilder.add(_serverCtx.serverMetadata.interceptors.where((i) => i.library == null).map(
+        (i) => new _Interceptor(new RegExp(i.conf.urlPattern), [i.conf.chainIdx], _serverCtx.interceptorInvokers[i])));
 
-    _serverCtx.serverMetadata.errorHandlers
-        .where((e) => e.library == null)
-        .forEach((e) => _errorHandlerMapBuilder.add(
-            e.conf.statusCode,
-            new _ErrorHandler(
-                e.conf.urlPattern != null
-                    ? new RegExp(e.conf.urlPattern)
-                    : null,
-                _serverCtx.errorHandlerInvokers[e])));
+    _serverCtx.serverMetadata.errorHandlers.where((e) => e.library == null).forEach((e) => _errorHandlerMapBuilder.add(
+        e.conf.statusCode,
+        new _ErrorHandler(
+            e.conf.urlPattern != null ? new RegExp(e.conf.urlPattern) : null, _serverCtx.errorHandlerInvokers[e])));
   }
 
   void _getTargets(String pathPrefix, LibraryMetadata lib) {
@@ -212,40 +185,13 @@ class Router {
       }
 
       if (logSetUp) {
-        redstoneLogger.info(
-            "Configured target for $url ${route.conf.methods}: ${route.name}");
+        redstoneLogger.info("Configured target for $url ${route.conf.methods}: ${route.name}");
       }
-      _targetListBuilder.add(_getContextUrl(pathPrefix), urlTemplate,
-          route.conf.methods, _serverCtx.routeInvokers[route]);
+      _targetListBuilder.add(
+          _getContextUrl(pathPrefix), urlTemplate, route.conf.methods, _serverCtx.routeInvokers[route]);
     }
 
     for (GroupMetadata group in lib.groups) {
-      for (DefaultRouteMetadata route in group.defaultRoutes) {
-        var url = null;
-        var urlTemplate = null;
-
-        if (pathPrefix != null) {
-          url = _joinUrl(pathPrefix, group.conf.urlPrefix);
-        } else {
-          url = group.conf.urlPrefix;
-        }
-
-        String contextUrl = _getContextUrl(pathPrefix);
-
-        if (route.conf.pathSuffix != null) {
-          url += route.conf.pathSuffix;
-        }
-
-        urlTemplate = new UrlTemplate(url);
-        if (logSetUp) {
-          redstoneLogger.info(
-              "Configured target for $url ${route.conf.methods}: ${route.name}"
-              " (group: ${group.name})");
-        }
-        _targetListBuilder.add(contextUrl, urlTemplate, route.conf.methods,
-            _serverCtx.routeInvokers[route]);
-      }
-
       for (RouteMetadata route in group.routes) {
         var urlTemplate = null;
 
@@ -262,18 +208,16 @@ class Router {
         }
 
         if (logSetUp) {
-          redstoneLogger.info(
-              "Configured target for $url ${route.conf.methods}: ${route.name}"
+          redstoneLogger.info("Configured target for $url ${route.conf.methods}: ${route.name}"
               " (group: ${group.name})");
         }
-        _targetListBuilder.add(_getContextUrl(contextUrl), urlTemplate,
-            route.conf.methods, _serverCtx.routeInvokers[route]);
+        _targetListBuilder.add(
+            _getContextUrl(contextUrl), urlTemplate, route.conf.methods, _serverCtx.routeInvokers[route]);
       }
     }
   }
 
-  void _getInterceptors(
-      String pathPrefix, List<int> chainIdxByLevel, LibraryMetadata lib) {
+  void _getInterceptors(String pathPrefix, List<int> chainIdxByLevel, LibraryMetadata lib) {
     var interceptors = lib.interceptors.map((i) {
       var url = _joinUrl(pathPrefix, i.conf.urlPattern);
       if (logSetUp) {
@@ -309,39 +253,30 @@ class Router {
 
   void _getErrorHandlers(String pathPrefix, LibraryMetadata lib) {
     lib.errorHandlers.forEach((e) {
-      var handlerPattern = pathPrefix != null && e.conf.urlPattern == null
-          ? r"/.*"
-          : e.conf.urlPattern;
+      var handlerPattern = pathPrefix != null && e.conf.urlPattern == null ? r"/.*" : e.conf.urlPattern;
       var pattern = _joinUrl(pathPrefix, handlerPattern);
 
       var urlInfo = pattern != null ? " - $pattern" : "";
       if (logSetUp) {
-        redstoneLogger.info(
-            "Configured error handler for status ${e.conf.statusCode} $urlInfo :"
+        redstoneLogger.info("Configured error handler for status ${e.conf.statusCode} $urlInfo :"
             "${e.name}");
       }
 
-      _errorHandlerMapBuilder.add(
-          e.conf.statusCode,
-          new _ErrorHandler(pattern != null ? new RegExp(pattern) : null,
-              _serverCtx.errorHandlerInvokers[e]));
+      _errorHandlerMapBuilder.add(e.conf.statusCode,
+          new _ErrorHandler(pattern != null ? new RegExp(pattern) : null, _serverCtx.errorHandlerInvokers[e]));
     });
 
     lib.groups.forEach((g) {
       var pattern = _joinUrl(pathPrefix, g.conf.urlPrefix);
       g.errorHandlers.forEach((e) {
-        var handlerPattern =
-            e.conf.urlPattern == null ? r"/.*" : e.conf.urlPattern;
+        var handlerPattern = e.conf.urlPattern == null ? r"/.*" : e.conf.urlPattern;
         handlerPattern = _joinUrl(pattern, handlerPattern);
         if (logSetUp) {
-          redstoneLogger
-              .info("Configured error handler for status ${e.conf.statusCode} "
-                  "$handlerPattern : ${e.name} (group: ${g.name})");
+          redstoneLogger.info("Configured error handler for status ${e.conf.statusCode} "
+              "$handlerPattern : ${e.name} (group: ${g.name})");
         }
         _errorHandlerMapBuilder.add(
-            e.conf.statusCode,
-            new _ErrorHandler(new RegExp(handlerPattern),
-                _serverCtx.errorHandlerInvokers[e]));
+            e.conf.statusCode, new _ErrorHandler(new RegExp(handlerPattern), _serverCtx.errorHandlerInvokers[e]));
       });
     });
   }
@@ -372,8 +307,7 @@ class _ChainImpl implements Chain {
 
   bool _errorHandlerExecuted = false;
 
-  _ChainImpl(this._targets, this._interceptors, this._errorHandlers,
-      this._forwardShelfHandler, this.showErrorPage);
+  _ChainImpl(this._targets, this._interceptors, this._errorHandlers, this._forwardShelfHandler, this.showErrorPage);
 
   @override
   dynamic get error => _error;
@@ -382,10 +316,8 @@ class _ChainImpl implements Chain {
   dynamic get stackTrace => _stackTrace;
 
   @override
-  Future<shelf.Response> createResponse(int statusCode,
-      {Object responseValue, String responseType}) async {
-    var resp = await writeResponse(null, responseValue,
-        statusCode: statusCode, responseType: responseType);
+  Future<shelf.Response> createResponse(int statusCode, {Object responseValue, String responseType}) async {
+    var resp = await writeResponse(null, responseValue, statusCode: statusCode, responseType: responseType);
     return resp;
   }
 
@@ -393,8 +325,7 @@ class _ChainImpl implements Chain {
   Future<shelf.Response> next() async {
     if (_reqInterceptors.moveNext()) {
       try {
-        var resp =
-            await _reqInterceptors.current.interceptor(currentContext.request);
+        var resp = await _reqInterceptors.current.interceptor(currentContext.request);
         if (resp is shelf.Response) {
           currentContext.response = resp;
         }
@@ -448,22 +379,18 @@ class _ChainImpl implements Chain {
 
   @override
   shelf.Response redirect(String url) {
-    var resp =
-        new shelf.Response.found(currentContext.request.url.resolve(url));
+    var resp = new shelf.Response.found(currentContext.request.url.resolve(url));
     currentContext.response = resp;
     return resp;
   }
 
   @override
-  Future<shelf.Response> forward(String url,
-      {Map<String, String> headers}) async {
+  Future<shelf.Response> forward(String url, {Map<String, String> headers}) async {
     var req = currentContext.request;
-    var newUrl = url.startsWith('/')
-        ? req.requestedUri.resolve(url)
-        : Uri.parse(_joinUrl(req.requestedUri.toString(), url));
+    var newUrl =
+        url.startsWith('/') ? req.requestedUri.resolve(url) : Uri.parse(_joinUrl(req.requestedUri.toString(), url));
     var shelfReqCtx = new Map.from(req.attributes);
-    var newReq = new shelf.Request("GET", newUrl,
-        headers: headers, context: shelfReqCtx);
+    var newReq = new shelf.Request("GET", newUrl, headers: headers, context: shelfReqCtx);
 
     return _forwardShelfHandler(newReq);
   }
@@ -474,12 +401,9 @@ class _ChainImpl implements Chain {
   }
 
   Future<shelf.Response> _handleError(
-      [Object err,
-      StackTrace stack,
-      int statusCode = 500,
-      bool generatePage = false]) async {
+      [Object err, StackTrace stack, int statusCode = 500, bool generatePage = false]) async {
     statusCode = statusCode != null ? statusCode : 500;
-    if(err is ErrorResponse) {
+    if (err is ErrorResponse) {
       statusCode = err.statusCode;
     }
 
@@ -520,11 +444,8 @@ class _ChainImpl implements Chain {
         if (stack == null) {
           stack = currentContext.lastStackTrace;
         }
-        shelf.Response resp = await writeErrorPage(
-            currentContext.request.shelfRequest.requestedUri.path,
-            err,
-            stack,
-            statusCode);
+        shelf.Response resp =
+            await writeErrorPage(currentContext.request.shelfRequest.requestedUri.path, err, stack, statusCode);
         currentContext.response = resp;
       }
     }
@@ -545,8 +466,7 @@ class _ChainImpl implements Chain {
 
   void _findTarget() {
     for (_Target target in _targets) {
-      UrlMatch match = target.template
-          .match(currentContext.request.shelfRequest.requestedUri.path);
+      UrlMatch match = target.template.match(currentContext.request.shelfRequest.requestedUri.path);
       if (match != null && match.tail.isEmpty) {
         var urlParameters = {};
         match.parameters.forEach((String key, String value) {
@@ -555,7 +475,7 @@ class _ChainImpl implements Chain {
           }
           urlParameters[key] = value;
         });
-        currentContext.request.urlParameters = new DynamicMap(urlParameters);
+        currentContext.request.urlParameters = new Map.from(urlParameters);
         _reqTarget = target;
         return;
       }
@@ -584,8 +504,7 @@ class _TargetListBuilder {
   final List<_Target> targets = [];
   final Map<String, _Target> mapTargets = {};
 
-  void add(String contextUrl, UrlTemplate url, List<String> methods,
-      RouteInvoker invoker) {
+  void add(String contextUrl, UrlTemplate url, List<String> methods, RouteInvoker invoker) {
     var key = url.toString();
     var target = mapTargets[key];
     if (target == null) {
@@ -617,8 +536,7 @@ class _Target {
 class _InterceptorListBuilder {
   final List<_Interceptor> interceptors = [];
 
-  void add(Iterable<_Interceptor> interceptors) =>
-      this.interceptors.addAll(interceptors);
+  void add(Iterable<_Interceptor> interceptors) => this.interceptors.addAll(interceptors);
 
   List<_Interceptor> build() {
     interceptors.sort((i1, i2) {
@@ -706,3 +624,153 @@ String _joinUrl(String prefix, String url) {
 
   return url.startsWith("/") ? "$prefix$url" : "$prefix/$url";
 }
+
+/// A reversible URL matcher interface.
+abstract class UrlMatcher extends Comparable<UrlMatcher> {
+  /// Attempts to match a given URL. If match is successful then returns an
+  /// instance or [UrlMatch], otherwise returns [null].
+  UrlMatch match(String url);
+
+  /// Reverses (reconstructs) a URL from optionally provided parameters map
+  /// and a tail.
+  String reverse({Map parameters, String tail});
+
+  /// Returns a list of named parameters in the URL.
+  List<String> get urlParameterNames;
+
+  /// Returns a value which is:
+  /// * negative if this matcher should be tested before another.
+  /// * zero if this matcher and another can be tested in no particular order.
+  /// * positive if this matcher should be tested after another.
+  int compareTo(UrlMatcher other);
+}
+
+/// Object representing a successful URL match.
+class UrlMatch {
+  /// Matched section of the URL
+  final String match;
+
+  /// Remaining unmatched suffix
+  final String tail;
+
+  final Map<String, String> parameters;
+
+  UrlMatch(this.match, this.tail, this.parameters);
+
+  bool operator ==(other) =>
+      other is UrlMatch && other.match == match && other.tail == tail && mapsShallowEqual(other.parameters, parameters);
+
+  int get hashCode => 13 * match.hashCode + 101 * tail.hashCode + 199 * parameters.hashCode;
+
+  String toString() => '{$match, $tail, $parameters}';
+}
+
+final _specialChars = new RegExp(r'[\\()$^.+[\]{}|]');
+final _paramPattern = r'([^/?]+)';
+final _paramWithSlashesPattern = r'([^?]+)';
+
+/// A reversible URL template class that can match/parse and reverse URL
+/// templates like: /foo/:bar/baz
+class UrlTemplate implements UrlMatcher {
+  // Parameter names of the template ie  `['bar']` for `/foo/:bar/baz`
+  List<String> _fields;
+
+  // The compiled template
+  RegExp _pattern;
+
+  /// The template exploded as parts // ignore: slash_for_doc_comments, slash_for_doc_comments
+  /// - even indexes contain text
+  /// - odd indexes contain closures that return the parameter value
+  ///
+  /// `/foo/:bar/baz` produces:
+  /// - [0] = `/foo/`
+  /// - [1] = `(p) => p['bar']`
+  /// - [2] = `/baz`
+  List _chunks;
+
+  String toString() => 'UrlTemplate($_pattern)';
+
+  int compareTo(UrlMatcher other) {
+    final String tmpParamPattern = '\t';
+    if (other is UrlTemplate) {
+      String thisPattern = _pattern.pattern.replaceAll(_paramPattern, tmpParamPattern);
+      String otherPattern = other._pattern.pattern.replaceAll(_paramPattern, tmpParamPattern);
+      List<String> thisPatternParts = thisPattern.split('/');
+      List<String> otherPatternParts = otherPattern.split('/');
+      if (thisPatternParts.length == otherPatternParts.length) {
+        for (int i = 0; i < thisPatternParts.length; i++) {
+          String thisPart = thisPatternParts[i];
+          String otherPart = otherPatternParts[i];
+          if (thisPart == tmpParamPattern && otherPart != tmpParamPattern) {
+            return 1;
+          } else if (thisPart != tmpParamPattern && otherPart == tmpParamPattern) {
+            return -1;
+          }
+        }
+        return otherPattern.compareTo(thisPattern);
+      } else {
+        return otherPatternParts.length - thisPatternParts.length;
+      }
+    } else {
+      return 0;
+    }
+  }
+
+  UrlTemplate(String template) {
+    _compileTemplate(template);
+  }
+
+  void _compileTemplate(String template) {
+    // Escape special characters
+    template = template.replaceAllMapped(_specialChars, (m) => r'\' + m[0]);
+    _fields = <String>[];
+    _chunks = [];
+    var exp = new RegExp(r':(\w+\*?)');
+    StringBuffer sb = new StringBuffer('^');
+    int start = 0;
+    exp.allMatches(template).forEach((Match m) {
+      var paramName = m[1];
+      var txt = template.substring(start, m.start);
+      _fields.add(paramName);
+      _chunks.add(txt);
+      _chunks.add((Map params) => params[paramName]);
+      sb.write(txt);
+      if (paramName.endsWith(r'*')) {
+        sb.write(_paramWithSlashesPattern);
+      } else {
+        sb.write(_paramPattern);
+      }
+      start = m.end;
+    });
+    if (start != template.length) {
+      var txt = template.substring(start, template.length);
+      sb.write(txt);
+      _chunks.add(txt);
+    }
+    _pattern = new RegExp(sb.toString());
+  }
+
+  UrlMatch match(String url) {
+    Match match = _pattern.firstMatch(url);
+    if (match == null) {
+      return null;
+    }
+    var parameters = new Map<String, String>();
+    for (var i = 0; i < match.groupCount; i++) {
+      parameters[_fields[i]] = match[i + 1];
+    }
+    var tail = url.substring(match[0].length);
+    return new UrlMatch(match[0], tail, parameters);
+  }
+
+  String reverse({Map parameters, String tail: ''}) {
+    if (parameters == null) {
+      parameters = const {};
+    }
+    return _chunks.map((c) => c is Function ? c(parameters) : c).join() + tail;
+  }
+
+  List<String> get urlParameterNames => _fields;
+}
+
+bool mapsShallowEqual(Map a, Map b) => a.length == b.length && a.keys.every((k) => b.containsKey(k) && a[k] == b[k]);

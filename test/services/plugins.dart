@@ -113,7 +113,7 @@ class Wrap {
 }
 
 void wrapperPlugin(Manager manager) {
-  manager.addRouteWrapper(Wrap, (Wrap wrap, injector, request, route) async {
+  manager.addRouteWrapper(Wrap, (wrap, injector, request, route) async {
     var resp = await route(injector, request);
 
     if (resp is shelf.Response) return resp;

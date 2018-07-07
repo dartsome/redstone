@@ -7,6 +7,7 @@ final Logger redstoneLogger = new Logger("redstone_server");
 
 /// Setup a simple log handler, that output messages to console.
 void setupConsoleLog([Level level = Level.INFO]) {
+  Logger.root.clearListeners();
   Logger.root.level = level;
   Logger.root.onRecord.listen((LogRecord rec) {
     if (rec.level >= Level.SEVERE) {

@@ -22,31 +22,31 @@ String postHandler() => "post_handler";
 @Route("/change_status_code", statusCode: 201)
 String changeStatusCode() => "response";
 
-@Group("/group")
+@Group("")
 class ServiceGroup {
-  @DefaultRoute()
+  @Route("/group")
   String defaultRoute() => "default_route";
 
-  @DefaultRoute(pathSuffix: ".json")
+  @Route("/group.json")
   String defaultRouteJson() => "default_route_json";
 
-  @DefaultRoute(methods: const [POST])
+  @Route("/group", methods: const [POST])
   String defaultRoutePost() => "default_route_post";
 
-  @Interceptor("/path(/.*)?")
+  @Interceptor("/group/path(/.*)?")
   Future<shelf.Response> interceptor() async {
     await chain.next();
     var resp = await response.readAsString();
     return new shelf.Response.ok("interceptor $resp");
   }
 
-  @Route("/path/:subpath*")
+  @Route("/group/path/:subpath*")
   String mainRoute() => "main_route";
 
-  @Route("/path/subpath")
+  @Route("/group/path/subpath")
   String subRoute() => "sub_route";
 
-  @Route("/change_status_code", statusCode: 201)
+  @Route("/group/change_status_code", statusCode: 201)
   String changeStatusCode() => "response";
 }
 

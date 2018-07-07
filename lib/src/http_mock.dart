@@ -270,7 +270,16 @@ class MockHttpRequest extends Stream<List<int>> implements HttpRequest {
   @override
   String get protocolVersion => "1.1";
 
+  @override
+  HttpConnectionInfo get connectionInfo => new _HttpConnectionInfo();
+
   dynamic noSuchMethod(Invocation invocation) {
     return super.noSuchMethod(invocation);
   }
+}
+
+class _HttpConnectionInfo extends HttpConnectionInfo {
+  InternetAddress get remoteAddress => new InternetAddress("127.0.0.1");
+  int get remotePort => 42;
+  int get localPort => 1337;
 }

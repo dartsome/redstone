@@ -39,31 +39,31 @@ class Scanner {
       mirrors = [mirrorSystem.isolate.rootLibrary];
     }
 
-    mirrors.forEach((mirror) {
+    for (var mirror in mirrors) {
       LibraryMetadata lib = _scanLibrary(mirror);
       if (lib != null) {
         _rootLibraries.add(lib);
       }
-    });
+    }
 
-    return new ServerMetadata(_rootLibraries, _loadedLibraries, _routes,
-        _interceptors, _errorHandlers, _groups);
+    return new ServerMetadata(_rootLibraries, _loadedLibraries, _routes, _interceptors, _errorHandlers, _groups);
   }
 
   LibraryMetadata _scanLibrary(LibraryMirror mirror, [Install conf]) {
     var dependencies = <LibraryMetadata>[];
-    mirror.libraryDependencies
-        .where((d) =>
-            d.isImport &&
-            _libCache.add(d.targetLibrary.simpleName) &&
-            !blacklistSet.contains(d.targetLibrary.simpleName))
-        .forEach((d) {
+    for (var d in mirror.libraryDependencies.where((d) =>
+        d.isImport &&
+        _libCache.add(d.targetLibrary.simpleName) &&
+        !blacklistSet.contains(d.targetLibrary.simpleName))) {
+      print(d.targetLibrary.simpleName);
+      print(d.location);
+      print(d.metadata);
       Install conf = null;
       var metadata = [];
       for (InstanceMirror m in d.metadata) {
         metadata.add(m.reflectee);
         if (m.reflectee is Ignore) {
-          return;
+          return null;
         } else if (m.reflectee is Install) {
           conf = m.reflectee;
           break;
@@ -74,13 +74,10 @@ class Scanner {
       if (lib != null) {
         dependencies.add(lib);
       }
-    });
+    }
 
     LibraryMetadata lib = new LibraryMetadata(
-        conf,
-        mirror,
-        mirror.metadata.map((m) => m.reflectee).toList(growable: false),
-        dependencies);
+        conf, mirror, mirror.metadata.map((m) => m.reflectee).toList(growable: false), dependencies);
 
     _loadHandlers(lib);
 
@@ -92,7 +89,7 @@ class Scanner {
   void _loadHandlers(LibraryMetadata lib) {
     for (DeclarationMirror declaration in lib.mirror.declarations.values) {
       if (declaration is MethodMirror) {
-        declaration.metadata.map((m) => m.reflectee).forEach((conf) {
+        for (var conf in declaration.metadata.map((m) => m.reflectee)) {
           if (conf is Route) {
             lib.routes.add(_loadRoute(lib, declaration, conf));
           } else if (conf is Interceptor) {
@@ -100,13 +97,13 @@ class Scanner {
           } else if (conf is ErrorHandler) {
             lib.errorHandlers.add(_loadErrorHandlers(lib, declaration, conf));
           }
-        });
+        }
       } else if (declaration is ClassMirror) {
-        declaration.metadata.map((m) => m.reflectee).forEach((conf) {
+        for (var conf in declaration.metadata.map((m) => m.reflectee)) {
           if (conf is Group) {
             lib.groups.add(_loadGroup(lib, declaration, conf));
           }
-        });
+        }
       }
     }
 
@@ -116,36 +113,27 @@ class Scanner {
     _groups.addAll(lib.groups);
   }
 
-  RouteMetadata _loadRoute(
-      LibraryMetadata lib, MethodMirror mirror, Route conf) {
-    var metadata =
-        mirror.metadata.map((m) => m.reflectee).toList(growable: false);
+  RouteMetadata _loadRoute(LibraryMetadata lib, MethodMirror mirror, Route conf) {
+    var metadata = mirror.metadata.map((m) => m.reflectee).toList(growable: false);
 
     return new RouteMetadata(lib, conf, mirror, metadata);
   }
 
-  InterceptorMetadata _loadInterceptor(
-      LibraryMetadata lib, MethodMirror mirror, Interceptor conf) {
-    var metadata =
-        mirror.metadata.map((m) => m.reflectee).toList(growable: false);
+  InterceptorMetadata _loadInterceptor(LibraryMetadata lib, MethodMirror mirror, Interceptor conf) {
+    var metadata = mirror.metadata.map((m) => m.reflectee).toList(growable: false);
 
     return new InterceptorMetadata(lib, conf, mirror, metadata);
   }
 
-  ErrorHandlerMetadata _loadErrorHandlers(
-      LibraryMetadata lib, MethodMirror mirror, ErrorHandler conf) {
-    var metadata =
-        mirror.metadata.map((m) => m.reflectee).toList(growable: false);
+  ErrorHandlerMetadata _loadErrorHandlers(LibraryMetadata lib, MethodMirror mirror, ErrorHandler conf) {
+    var metadata = mirror.metadata.map((m) => m.reflectee).toList(growable: false);
 
     return new ErrorHandlerMetadata(lib, conf, mirror, metadata);
   }
 
-  GroupMetadata _loadGroup(
-      LibraryMetadata lib, ClassMirror mirror, Group conf) {
-    var metadata =
-        mirror.metadata.map((m) => m.reflectee).toList(growable: false);
+  GroupMetadata _loadGroup(LibraryMetadata lib, ClassMirror mirror, Group conf) {
+    var metadata = mirror.metadata.map((m) => m.reflectee).toList(growable: false);
 
-    var defaultRoutes = <DefaultRouteMetadata>[];
     var routes = <RouteMetadata>[];
     var interceptors = <InterceptorMetadata>[];
     var errorHandlers = <ErrorHandlerMetadata>[];
@@ -155,12 +143,9 @@ class Scanner {
     while (current != null) {
       for (DeclarationMirror declaration in current.declarations.values) {
         if (declaration is MethodMirror && !visited.contains(declaration.simpleName)) {
-          declaration.metadata.map((m) => m.reflectee).forEach((conf) {
+          for (var conf in declaration.metadata.map((m) => m.reflectee)) {
             var hasRedstoneMetadata = false;
-            if (conf is DefaultRoute) {
-              defaultRoutes.add(_loadDefaultRoutes(lib, declaration, conf));
-              hasRedstoneMetadata = true;
-            } else if (conf is Route) {
+            if (conf is Route) {
               routes.add(_loadRoute(lib, declaration, conf));
               hasRedstoneMetadata = true;
             } else if (conf is Interceptor) {
@@ -173,22 +158,13 @@ class Scanner {
             if (hasRedstoneMetadata) {
               visited.add(declaration.simpleName);
             }
-          });
+          }
         }
       }
       current = current.superclass;
     }
 
-    return new GroupMetadata(lib, conf, mirror, metadata, defaultRoutes, routes,
-        interceptors, errorHandlers);
-  }
-
-  DefaultRouteMetadata _loadDefaultRoutes(
-      LibraryMetadata lib, MethodMirror mirror, DefaultRoute conf) {
-    var metadata =
-        mirror.metadata.map((m) => m.reflectee).toList(growable: false);
-
-    return new DefaultRouteMetadata(lib, conf, mirror, metadata);
+    return new GroupMetadata(lib, conf, mirror, metadata, routes, interceptors, errorHandlers);
   }
 }
 

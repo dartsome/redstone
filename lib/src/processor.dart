@@ -31,8 +31,7 @@ class Processor implements Manager {
 
   Injector _injector = null;
 
-  Processor(this.serverMetadata, this.shelfContext,
-      [this.modules, this.plugins]) {
+  Processor(this.serverMetadata, this.shelfContext, [this.modules, this.plugins]) {
     if (modules == null) {
       modules = [];
     }
@@ -78,35 +77,28 @@ class Processor implements Manager {
     serverMetadata.groups.forEach((GroupMetadata group) {
       var owner = reflect(_injector.get(group.mirror.reflectedType));
 
-      group.defaultRoutes.forEach((DefaultRouteMetadata route) {
-        _routeInvokers[route] = new RouteProcessor(route, _injector, owner);
-      });
-
       group.routes.forEach((RouteMetadata route) {
         _routeInvokers[route] = new RouteProcessor(route, _injector, owner);
       });
 
       group.interceptors.forEach((InterceptorMetadata interceptor) {
-        _interceptorInvokers[interceptor] =
-            _wrapInterceptor(interceptor, owner);
+        _interceptorInvokers[interceptor] = _wrapInterceptor(interceptor, owner);
       });
 
       group.errorHandlers.forEach((ErrorHandlerMetadata errorHandler) {
-        _errorHandlerInvokers[errorHandler] =
-            _wrapErrorHandler(errorHandler, owner);
+        _errorHandlerInvokers[errorHandler] = _wrapErrorHandler(errorHandler, owner);
       });
     });
 
-    return new ServerContext(serverMetadata, _routeInvokers,
-        _interceptorInvokers, _errorHandlerInvokers, shelfContext, _injector);
+    return new ServerContext(
+        serverMetadata, _routeInvokers, _interceptorInvokers, _errorHandlerInvokers, shelfContext, _injector);
   }
 
   @override
   Injector get appInjector => _injector;
 
   @override
-  Injector createInjector(List<Module> modules) =>
-      new ModuleInjector(modules, appInjector);
+  Injector createInjector(List<Module> modules) => new ModuleInjector(modules, appInjector);
 
   @override
   void set shelfHandler(shelf.Handler handler) {
@@ -117,18 +109,15 @@ class Processor implements Manager {
   shelf.Handler get shelfHandler => shelfContext.handler;
 
   @override
-  void addRouteWrapper(Type metadataType, RouteWrapper wrapper,
-      {bool includeGroups: false}) {
-    _findHandlers(_getRoutes, metadataType, includeGroups).forEach((m) =>
-        m.handler.wrappers.add(new RouteWrapperMetadata(wrapper, m.metadata)));
+  void addRouteWrapper(Type metadataType, RouteWrapper wrapper, {bool includeGroups: false}) {
+    _findHandlers(_getRoutes, metadataType, includeGroups)
+        .forEach((m) => (m.handler as RouteMetadata).wrappers.add(new RouteWrapperMetadata(wrapper, m.metadata)));
   }
 
   @override
-  void addResponseProcessor(Type metadataType, ResponseProcessor processor,
-      {bool includeGroups: false}) {
+  void addResponseProcessor(Type metadataType, ResponseProcessor processor, {bool includeGroups: false}) {
     _findHandlers(_getRoutes, metadataType, includeGroups).forEach((_Match m) =>
-        (m.handler as RequestTargetMetadata).responseProcessors
-            .add(new ResponseProcessorMetadata(processor, m.metadata)));
+        (m.handler as RouteMetadata).responseProcessors.add(new ResponseProcessorMetadata(processor, m.metadata)));
   }
 
   @override
@@ -148,14 +137,13 @@ class Processor implements Manager {
           break;
       }
 
-      _findHandlersByParams(f, metadataType).forEach((m) =>
-          m.handler.parameterProviders[metadataType] = parameterProvider);
+      _findHandlersByParams(f, metadataType)
+          .forEach((m) => (m.handler as RouteMetadata).parameterProviders[metadataType] = parameterProvider);
     });
   }
 
   @override
-  void addErrorHandler(
-      ErrorHandler conf, String name, DynamicHandler errorHandler) {
+  void addErrorHandler(ErrorHandler conf, String name, DynamicHandler errorHandler) {
     var invoker = _wrapDynamicErrorHandler(conf, name, errorHandler);
 
     var metadata = new ErrorHandlerMetadata(null, conf, null, [], name);
@@ -164,8 +152,7 @@ class Processor implements Manager {
   }
 
   @override
-  void addInterceptor(
-      Interceptor conf, String name, DynamicHandler interceptor) {
+  void addInterceptor(Interceptor conf, String name, DynamicHandler interceptor) {
     var invoker = _wrapDynamicInterceptor(conf, interceptor);
 
     var metadata = new InterceptorMetadata(null, conf, null, [], name);
@@ -176,21 +163,17 @@ class Processor implements Manager {
   @override
   void addRoute(Route conf, String name, DynamicRoute route) {
     var metadata = new RouteMetadata(null, conf, null, [], name);
-    var invoker =
-        new RouteProcessor.fromDynamicRoute(metadata, _injector, route);
+    var invoker = new RouteProcessor.fromDynamicRoute(metadata, _injector, route);
 
     _routeInvokers[metadata] = invoker;
     serverMetadata.routes.add(metadata);
   }
 
   @override
-  Iterable<AnnotatedType<MethodMirror>> findMethods(
-      ClassMirror clazz, Type annotation) {
+  Iterable<AnnotatedType<MethodMirror>> findMethods(ClassMirror clazz, Type annotation) {
     var methods = <AnnotatedType<MethodMirror>>[];
     clazz.instanceMembers.values.forEach((MethodMirror method) {
-      var metadata = method.metadata.firstWhere(
-          (m) => m.reflectee.runtimeType == annotation,
-          orElse: () => null);
+      var metadata = method.metadata.firstWhere((m) => m.reflectee.runtimeType == annotation, orElse: () => null);
 
       if (metadata != null) {
         methods.add(new AnnotatedType(method, metadata.reflectee));
@@ -204,9 +187,7 @@ class Processor implements Manager {
   Iterable<AnnotatedType<ClassMirror>> findClasses(Type annotation) {
     var classes = <AnnotatedType<ClassMirror>>[];
     _findDeclaredClasses().forEach((ClassMirror c) {
-      var metadata = c.metadata.firstWhere(
-          (m) => m.reflectee.runtimeType == annotation,
-          orElse: () => null);
+      var metadata = c.metadata.firstWhere((m) => m.reflectee.runtimeType == annotation, orElse: () => null);
 
       if (metadata != null) {
         classes.add(new AnnotatedType(c, metadata.reflectee));
@@ -220,9 +201,7 @@ class Processor implements Manager {
   Iterable<AnnotatedType<MethodMirror>> findFunctions(Type annotation) {
     var functions = <AnnotatedType<MethodMirror>>[];
     _findDeclaredFunctions().forEach((MethodMirror f) {
-      var metadata = f.metadata.firstWhere(
-          (m) => m.reflectee.runtimeType == annotation,
-          orElse: () => null);
+      var metadata = f.metadata.firstWhere((m) => m.reflectee.runtimeType == annotation, orElse: () => null);
 
       if (metadata != null) {
         functions.add(new AnnotatedType(f, metadata.reflectee));
@@ -234,23 +213,18 @@ class Processor implements Manager {
 
   List<HandlerMetadata> _getRoutes(dynamic metadata) {
     if (metadata is ApplicationMetadata) {
-      return <HandlerMetadata>[]
-        ..addAll(metadata.routes)
-        ..addAll(metadata.groups.expand(_getRoutes));
+      return <HandlerMetadata>[]..addAll(metadata.routes)..addAll(metadata.groups.expand(_getRoutes));
     } else if (metadata is GroupMetadata) {
-      return []..addAll(metadata.defaultRoutes)..addAll(metadata.routes);
+      return []..addAll(metadata.routes);
     }
     return [];
   }
 
-  List<HandlerMetadata> _getInterceptors(dynamic metadata) =>
-      metadata.interceptors;
+  List<HandlerMetadata> _getInterceptors(dynamic metadata) => metadata.interceptors;
 
-  List<HandlerMetadata> _getErrorHandlers(dynamic metadata) =>
-      metadata.errorHandlers;
+  List<HandlerMetadata> _getErrorHandlers(dynamic metadata) => metadata.errorHandlers;
 
-  List<_Match> _findHandlers(List<HandlerMetadata> getHandlers(metadata),
-      Type metadataType, bool includeGroups) {
+  List<_Match> _findHandlers(List<HandlerMetadata> getHandlers(metadata), Type metadataType, bool includeGroups) {
     var result = <_Match>[];
     getHandlers(serverMetadata).forEach((h) => h.metadata.forEach((m) {
           if (m.runtimeType == metadataType) {
@@ -271,27 +245,24 @@ class Processor implements Manager {
     return result;
   }
 
-  List<_Match> _findHandlersByParams(
-      List<HandlerMetadata> getHandlers(metadata), Type metadataType) {
+  List<_Match> _findHandlersByParams(List<HandlerMetadata> getHandlers(metadata), Type metadataType) {
     var result = <_Match>[];
-    getHandlers(serverMetadata)
-        .forEach((h) => (h.mirror as MethodMirror).parameters.forEach((p) {
-              p.metadata.map((m) => m.reflectee).forEach((m) {
-                if (m.runtimeType == metadataType) {
-                  result.add(new _Match(h, m));
-                }
-              });
-            }));
+    getHandlers(serverMetadata).forEach((h) => (h.mirror as MethodMirror).parameters.forEach((p) {
+          p.metadata.map((m) => m.reflectee).forEach((m) {
+            if (m.runtimeType == metadataType) {
+              result.add(new _Match(h, m));
+            }
+          });
+        }));
 
     serverMetadata.groups.forEach((g) {
-      getHandlers(g)
-          .forEach((h) => (h.mirror as MethodMirror).parameters.forEach((p) {
-                p.metadata.map((m) => m.reflectee).forEach((m) {
-                  if (m.runtimeType == metadataType) {
-                    result.add(new _Match(h, m));
-                  }
-                });
-              }));
+      getHandlers(g).forEach((h) => (h.mirror as MethodMirror).parameters.forEach((p) {
+            p.metadata.map((m) => m.reflectee).forEach((m) {
+              if (m.runtimeType == metadataType) {
+                result.add(new _Match(h, m));
+              }
+            });
+          }));
     });
 
     return result;
@@ -304,22 +275,17 @@ class Processor implements Manager {
     _injector = new ModuleInjector(modules);
   }
 
-  Iterable<MethodMirror> _findDeclaredFunctions() =>
-      serverMetadata.loadedLibraries
-          .expand((LibraryMirror ldef) => ldef.declarations.values)
-          .where((d) => d is MethodMirror);
+  Iterable<MethodMirror> _findDeclaredFunctions() => serverMetadata.loadedLibraries
+      .expand((LibraryMirror ldef) => ldef.declarations.values)
+      .where((d) => d is MethodMirror);
 
   Iterable<ClassMirror> _findDeclaredClasses() => serverMetadata.loadedLibraries
       .expand((LibraryMirror ldef) => ldef.declarations.values)
       .where((d) => d is ClassMirror);
 
-  InterceptorInvoker _wrapInterceptor(InterceptorMetadata interceptor,
-      [ObjectMirror owner]) {
+  InterceptorInvoker _wrapInterceptor(InterceptorMetadata interceptor, [ObjectMirror owner]) {
     var paramsProcessor = new ParametersProcessor(
-        interceptor.name,
-        interceptor.mirror.parameters,
-        _injector,
-        interceptor.parameterProviders);
+        interceptor.name, interceptor.mirror.parameters, _injector, interceptor.parameterProviders);
 
     paramsProcessor
       ..addDefaultMetadataHandlers()
@@ -339,19 +305,13 @@ class Processor implements Manager {
         await request.parseBody();
       }
 
-      return await owner
-          .invoke(interceptor.mirror.simpleName, positionalArgs, namedArgs)
-          .reflectee;
+      return await owner.invoke(interceptor.mirror.simpleName, positionalArgs, namedArgs).reflectee;
     };
   }
 
-  ErrorHandlerInvoker _wrapErrorHandler(ErrorHandlerMetadata errorHandler,
-      [ObjectMirror owner]) {
+  ErrorHandlerInvoker _wrapErrorHandler(ErrorHandlerMetadata errorHandler, [ObjectMirror owner]) {
     var paramsProcessor = new ParametersProcessor(
-        errorHandler.name,
-        errorHandler.mirror.parameters,
-        _injector,
-        errorHandler.parameterProviders);
+        errorHandler.name, errorHandler.mirror.parameters, _injector, errorHandler.parameterProviders);
 
     paramsProcessor
       ..addDefaultMetadataHandlers()
@@ -367,14 +327,11 @@ class Processor implements Manager {
 
       await paramsProcessor(request, positionalArgs, namedArgs);
 
-      return await owner
-          .invoke(errorHandler.mirror.simpleName, positionalArgs, namedArgs)
-          .reflectee;
+      return await owner.invoke(errorHandler.mirror.simpleName, positionalArgs, namedArgs).reflectee;
     };
   }
 
-  InterceptorInvoker _wrapDynamicInterceptor(
-      Interceptor conf, DynamicHandler interceptor) {
+  InterceptorInvoker _wrapDynamicInterceptor(Interceptor conf, DynamicHandler interceptor) {
     return (RequestParser request) async {
       if (conf.parseRequestBody) {
         await request.parseBody();
@@ -383,8 +340,7 @@ class Processor implements Manager {
     };
   }
 
-  ErrorHandlerInvoker _wrapDynamicErrorHandler(
-      ErrorHandler conf, String handlerName, DynamicHandler errorHandler) {
+  ErrorHandlerInvoker _wrapDynamicErrorHandler(ErrorHandler conf, String handlerName, DynamicHandler errorHandler) {
     return (Request request) async {
       var response = await errorHandler(_injector, request);
       return writeResponse(handlerName, response, statusCode: conf.statusCode);

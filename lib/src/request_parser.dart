@@ -8,16 +8,15 @@ import 'package:shelf/shelf.dart' as shelf;
 import 'package:http_server/src/http_body_impl.dart';
 
 import 'constants.dart';
-import 'dynamic_map.dart';
 import 'request.dart';
 
 class RequestParser implements Request {
   final HttpRequest httpRequest;
   shelf.Request _shelfRequest;
 
-  DynamicMap<String, String> _headers = null;
-  DynamicMap<String, List<String>> _queryParameters = null;
-  DynamicMap _attributes = null;
+  Map<String, String> _headers = null;
+  Map<String, List<String>> _queryParameters = null;
+  Map _attributes = null;
 
   ContentType _contentType = null;
   BodyType _bodyType = null;
@@ -37,7 +36,7 @@ class RequestParser implements Request {
 
     if (_body == null && !_skipParseOnMethods.contains(this.httpRequest.method)) {
       var httpBody = await HttpBodyHandlerImpl.process(_shelfRequest.read(),
-          new _HttpHeaders(headers, _contentType), encoding);
+          new _HttpHeaders(new Map.from(headers), _contentType), encoding);
 
       _body = httpBody.body;
     }
@@ -46,10 +45,10 @@ class RequestParser implements Request {
   }
 
   @override
-  DynamicMap get attributes => _attributes;
+  Map get attributes => _attributes;
 
   @override
-  DynamicMap<String, String> urlParameters = null;
+  Map<String, String> urlParameters = null;
 
   conv.Encoding encoding = conv.UTF8;
 
@@ -67,7 +66,7 @@ class RequestParser implements Request {
   }
 
   @override
-  DynamicMap get headers => _headers;
+  Map get headers => _headers;
 
   @override
   bool get isMultipart {
@@ -106,7 +105,7 @@ class RequestParser implements Request {
   }
 
   @override
-  DynamicMap<String, List<String>> get queryParameters {
+  Map<String, List<String>> get queryParameters {
     if (_queryParameters != null) {
       return _queryParameters;
     }
@@ -129,9 +128,9 @@ class RequestParser implements Request {
 
   void set shelfRequest(shelf.Request shelfRequest) {
     if (this.shelfRequest == null) {
-      _attributes = new DynamicMap({}..addAll(shelfRequest.context));
+      _attributes = new Map.from({}..addAll(shelfRequest.context));
     }
-    _headers = new DynamicMap(shelfRequest.headers);
+    _headers = new Map.from(shelfRequest.headers);
     _shelfRequest = shelfRequest;
   }
 
@@ -222,7 +221,7 @@ class RequestParser implements Request {
       return map;
     });
 
-    _queryParameters = new DynamicMap(params);
+    _queryParameters = params;
   }
 }
 

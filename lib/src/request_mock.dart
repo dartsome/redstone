@@ -122,9 +122,9 @@ class MockHttpSession extends DelegatingMap implements HttpSession {
 
 Stream<List<int>> _handleBody(BodyType bodyType, dynamic body,
     String contentType, bool isMultipart, Map<String, String> headerValues) {
-  var serializedBody = const [];
+  var serializedBody = const <int>[];
   if (body == null) {
-    return new Stream.fromIterable(serializedBody);
+    return new Stream.fromIterable([]);
   }
   switch (bodyType) {
     case JSON:
@@ -140,7 +140,7 @@ Stream<List<int>> _handleBody(BodyType bodyType, dynamic body,
     case FORM:
       if (isMultipart) {
         var m = new http.MultipartRequest("POST", new Uri());
-        (body as Map).forEach((String key, value) {
+        (body as Map<String, dynamic>).forEach((String key, value) {
           if (value is HttpBodyFileUpload) {
             m.files.add(new http.MultipartFile(key,
                 new Stream.fromIterable([value.content]), value.content.length,

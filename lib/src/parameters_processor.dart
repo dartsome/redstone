@@ -15,8 +15,8 @@ typedef dynamic ArgHandler(Request request, Converter converter);
 typedef ArgHandler ParamHandler(String handlerName, Injector injector,
     Object metadata, ParameterMirror mirror);
 
-const ParamHandler attributeHandler = const AttributeHandler();
-const ParamHandler diHandler = const DiHandler();
+final ParamHandler attributeHandler = new AttributeHandler();
+final ParamHandler diHandler = new DiHandler();
 
 final ClassMirror intType = reflectClass(int);
 final ClassMirror doubleType = reflectClass(double);
@@ -123,7 +123,7 @@ class ParametersProcessor implements Function {
 }
 
 class AttributeHandler implements Function {
-  const AttributeHandler();
+  AttributeHandler();
 
   ArgHandler call(String handlerName, Injector injector, Object metadata,
       ParameterMirror mirror) {
@@ -135,7 +135,7 @@ class AttributeHandler implements Function {
 }
 
 class DiHandler implements Function {
-  const DiHandler();
+  DiHandler();
 
   ArgHandler call(String handlerName, Injector injector, Object metadata,
       ParameterMirror mirror) {
