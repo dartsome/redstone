@@ -186,7 +186,7 @@ class Processor implements Manager {
   @override
   Iterable<AnnotatedType<ClassMirror>> findClasses(Type annotation) {
     var classes = <AnnotatedType<ClassMirror>>[];
-    _findDeclaredClasses().forEach((ClassMirror c) {
+    _findDeclaredClasses().forEach((c) {
       var metadata = c.metadata.firstWhere((m) => m.reflectee.runtimeType == annotation, orElse: () => null);
 
       if (metadata != null) {
@@ -200,7 +200,7 @@ class Processor implements Manager {
   @override
   Iterable<AnnotatedType<MethodMirror>> findFunctions(Type annotation) {
     var functions = <AnnotatedType<MethodMirror>>[];
-    _findDeclaredFunctions().forEach((MethodMirror f) {
+    _findDeclaredFunctions().forEach((f) {
       var metadata = f.metadata.firstWhere((m) => m.reflectee.runtimeType == annotation, orElse: () => null);
 
       if (metadata != null) {
@@ -276,12 +276,14 @@ class Processor implements Manager {
   }
 
   Iterable<MethodMirror> _findDeclaredFunctions() => serverMetadata.loadedLibraries
-      .expand((LibraryMirror ldef) => ldef.declarations.values)
-      .where((d) => d is MethodMirror);
+      .expand<DeclarationMirror>((LibraryMirror ldef) => ldef.declarations.values)
+      .where((d) => d is MethodMirror)
+      .map((m) => m as MethodMirror);
 
   Iterable<ClassMirror> _findDeclaredClasses() => serverMetadata.loadedLibraries
-      .expand((LibraryMirror ldef) => ldef.declarations.values)
-      .where((d) => d is ClassMirror);
+      .expand<DeclarationMirror>((LibraryMirror ldef) => ldef.declarations.values)
+      .where((d) => d is ClassMirror)
+      .map((c) => c as ClassMirror);
 
   InterceptorInvoker _wrapInterceptor(InterceptorMetadata interceptor, [ObjectMirror owner]) {
     var paramsProcessor = new ParametersProcessor(
