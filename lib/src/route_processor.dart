@@ -103,7 +103,7 @@ class RouteProcessor implements Function {
     //verify method
     if (!routeMetadata.conf.methods.contains(req.method)) {
       throw new RequestException(routeMetadata.name,
-          "${req.method} method not allowed", HttpStatus.METHOD_NOT_ALLOWED);
+          "${req.method} method not allowed", HttpStatus.methodNotAllowed);
     }
 
     //verify multipart

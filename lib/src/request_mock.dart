@@ -48,9 +48,9 @@ class MockRequest extends RequestParser {
     headers.forEach((k, v) => hValues[k] = [v]);
 
     if (basicAuth != null) {
-      String auth = conv.BASE64.encode(
-          conv.UTF8.encode("${basicAuth.username}:${basicAuth.password}"));
-      hValues[HttpHeaders.AUTHORIZATION] = ["Basic $auth"];
+      String auth = conv.base64Encode(
+          conv.utf8.encode("${basicAuth.username}:${basicAuth.password}"));
+      hValues[HttpHeaders.authorizationHeader] = ["Basic $auth"];
     }
 
     var _httpHeaders = new MockHttpHeaders(hValues);
@@ -130,12 +130,12 @@ Stream<List<int>> _handleBody(BodyType bodyType, dynamic body,
     case JSON:
       headerValues["content-type"] =
           contentType != null ? contentType : "application/json";
-      serializedBody = conv.UTF8.encode(conv.JSON.encode(body));
+      serializedBody = conv.utf8.encode(conv.jsonEncode(body));
       break;
     case TEXT:
       headerValues["content-type"] =
           contentType != null ? contentType : "text/plain";
-      serializedBody = conv.UTF8.encode(body.toString());
+      serializedBody = conv.utf8.encode(body.toString());
       break;
     case FORM:
       if (isMultipart) {
@@ -158,11 +158,11 @@ Stream<List<int>> _handleBody(BodyType bodyType, dynamic body,
             ? contentType
             : "application/x-www-form-urlencoded";
         serializedBody =
-            conv.UTF8.encode(mapToQuery(body, encoding: conv.UTF8));
+            conv.utf8.encode(mapToQuery(body, encoding: conv.utf8));
       }
       break;
     default:
-      serializedBody = conv.UTF8.encode(body.toString());
+      serializedBody = conv.utf8.encode(body.toString());
   }
 
   return new Stream.fromIterable([serializedBody]);

@@ -37,7 +37,7 @@ class _OtherType {
 
 class _MockFile implements File {
   Stream<List<int>> _stream =
-      new Stream.fromIterable([UTF8.encode(r'{"key": "value"}')]);
+      new Stream.fromIterable([utf8.encode(r'{"key": "value"}')]);
 
   String get path => "test.json";
 

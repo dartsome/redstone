@@ -5,10 +5,15 @@ import 'package:redstone/redstone.dart';
 import 'package:shelf/shelf.dart' as shelf;
 
 @Install(urlPrefix: "/prefix")
+// ignore: unused_import
 import 'install/install_path.dart';
+
 @Install(urlPrefix: "/chain", chainIdx: 1)
+// ignore: unused_import
 import 'install/install_interceptors.dart';
+
 @Ignore()
+// ignore: unused_import
 import 'install/ignore.dart';
 
 @Interceptor("/chain/.+")

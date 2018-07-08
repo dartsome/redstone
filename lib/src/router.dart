@@ -97,7 +97,7 @@ class Router {
 
       return completer.future.then((shelf.Response response) {
         redstoneLogger.fine("Request for ${req.url} returned status ${response.statusCode}");
-        return response.change(headers: const {HttpHeaders.SERVER: serverSignature});
+        return response.change(headers: const {HttpHeaders.serverHeader: serverSignature});
       });
     };
   }
@@ -357,7 +357,7 @@ class _ChainImpl implements Chain {
         if (invoker != null) {
           resp = await invoker(currentContext.request);
         } else {
-          resp = new shelf.Response(HttpStatus.METHOD_NOT_ALLOWED);
+          resp = new shelf.Response(HttpStatus.methodNotAllowed);
         }
         currentContext.response = resp;
       } catch (err, stack) {
@@ -656,7 +656,7 @@ class UrlMatch {
   final Map<String, String> parameters;
 
   UrlMatch(this.match, this.tail, this.parameters);
-
+  
   bool operator ==(other) =>
       other is UrlMatch && other.match == match && other.tail == tail && mapsShallowEqual(other.parameters, parameters);
 

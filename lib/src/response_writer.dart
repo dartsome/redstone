@@ -26,7 +26,7 @@ Future<shelf.Response> writeResponse(String handlerName, dynamic response,
     return new shelf.Response(response.statusCode,
         body: response.message,
         headers: {"content-type": "text/plain"},
-        encoding: conv.UTF8);
+        encoding: conv.utf8);
   }
   if (response is ErrorResponse) {
     statusCode = response.statusCode;
@@ -47,9 +47,9 @@ Future<shelf.Response> writeResponse(String handlerName, dynamic response,
   } else if (response is Map || response is List) {
     var type = responseType != null ? responseType : "application/json";
     return new shelf.Response(statusCode,
-        body: conv.JSON.encode(response),
+        body: conv.jsonEncode(response),
         headers: {"content-type": type},
-        encoding: conv.UTF8);
+        encoding: conv.utf8);
   } else if (response is File) {
     var type =
         responseType != null ? responseType : lookupMimeType(response.path);
@@ -137,18 +137,18 @@ shelf.Response writeErrorPage(String resource, Object error,
   return new shelf.Response(statusCode,
       body: errorTemplate,
       headers: {"content-type": "text/html"},
-      encoding: conv.UTF8);
+      encoding: conv.utf8);
 }
 
 String _getStatusDescription(int statusCode) {
   switch (statusCode) {
-    case HttpStatus.BAD_REQUEST:
+    case HttpStatus.badRequest:
       return "BAD REQUEST";
-    case HttpStatus.NOT_FOUND:
+    case HttpStatus.notFound:
       return "NOT FOUND";
-    case HttpStatus.METHOD_NOT_ALLOWED:
+    case HttpStatus.methodNotAllowed:
       return "METHOD NOT ALLOWED";
-    case HttpStatus.INTERNAL_SERVER_ERROR:
+    case HttpStatus.internalServerError:
       return "INTERNAL SERVER ERROR";
     default:
       return null;

@@ -50,7 +50,7 @@ class Route implements RequestTarget {
       this.responseType,
       this.statusCode: 200,
       this.allowMultipartRequest: false,
-      this.encoding: conv.UTF8});
+      this.encoding: conv.utf8});
 }
 
 /// An annotation to define a target parameter.

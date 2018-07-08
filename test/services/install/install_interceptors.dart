@@ -4,7 +4,9 @@ import 'package:redstone/redstone.dart';
 import 'package:shelf/shelf.dart' as shelf;
 
 import 'dart:async';
+
 @Install(chainIdx: 1)
+// ignore: unused_import
 import 'install_interceptors_level_1.dart';
 
 @Interceptor("/.+")

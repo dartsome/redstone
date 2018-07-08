@@ -50,11 +50,13 @@ class ServiceGroup {
   String changeStatusCode() => "response";
 }
 
+// ignore: one_member_abstracts
 abstract class Info {
   @Route("/info")
   String info();
 }
 
+// ignore: one_member_abstracts
 abstract class Version {
   @Route("/version")
   String version();

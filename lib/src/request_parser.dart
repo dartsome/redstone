@@ -50,7 +50,7 @@ class RequestParser implements Request {
   @override
   Map<String, String> urlParameters = null;
 
-  conv.Encoding encoding = conv.UTF8;
+  conv.Encoding encoding = conv.utf8;
 
   @override
   dynamic get body => _body;
@@ -86,12 +86,12 @@ class RequestParser implements Request {
     if (_credentials != null) {
       return _credentials;
     }
-    String authorization = headers[HttpHeaders.AUTHORIZATION];
+    String authorization = headers[HttpHeaders.authorizationHeader];
     if (authorization != null) {
       List<String> tokens = authorization.split(" ");
       if ("Basic" == tokens[0]) {
         String auth =
-            conv.UTF8.decode(conv.BASE64.decode(tokens[1]));
+            conv.utf8.decode(conv.base64Decode(tokens[1]));
         int idx = auth.indexOf(":");
         if (idx > 0) {
           String username = auth.substring(0, idx);
@@ -185,7 +185,7 @@ class RequestParser implements Request {
   void _parseContentType() {
     var ct = headers["content-type"];
     if (ct == null) {
-      _contentType = ContentType.BINARY;
+      _contentType = ContentType.binary;
       return;
     }
 

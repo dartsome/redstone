@@ -12,14 +12,23 @@ import 'package:redstone/redstone.dart';
 import 'package:shelf/shelf.dart' as shelf;
 
 // These appear to be unused but are dynamically loaded and must be present.
+// ignore: unused_import
 import 'services/routes.dart' as yo;
+// ignore: unused_import
 import 'services/type_serialization.dart';
+// ignore: unused_import
 import 'services/arguments.dart';
+// ignore: unused_import
 import 'services/errors.dart';
+// ignore: unused_import
 import 'services/interceptors.dart';
+// ignore: unused_import
 import 'services/dependency_injection.dart';
+// ignore: unused_import
 import 'services/install_lib.dart';
+// ignore: unused_import
 import 'services/plugins.dart';
+// ignore: unused_import
 import 'services/inspect.dart';
 
 void main() {
@@ -134,7 +143,7 @@ void main() {
       var req = new MockRequest("/types/map");
       var resp = await dispatch(req);
       expect(resp.headers.value("content-type"), contains("application/json"));
-      expect(conv.JSON.decode(resp.mockContent),
+      expect(conv.jsonDecode(resp.mockContent),
           {"key1": "value1", "key2": "value2"});
     });
 
@@ -142,7 +151,7 @@ void main() {
       var req = new MockRequest("/types/list");
       var resp = await dispatch(req);
       expect(resp.headers.value("content-type"), contains("application/json"));
-      expect(conv.JSON.decode(resp.mockContent),
+      expect(conv.jsonDecode(resp.mockContent),
           ["value1", "value2", "value3"]);
     });
 
@@ -157,7 +166,7 @@ void main() {
       var req = new MockRequest("/types/future");
       var resp = await dispatch(req);
       expect(resp.headers.value("content-type"), contains("application/json"));
-      expect(conv.JSON.decode(resp.mockContent),
+      expect(conv.jsonDecode(resp.mockContent),
           {"key1": "value1", "key2": "value2"});
     });
 
@@ -172,7 +181,7 @@ void main() {
       var req = new MockRequest("/types/file");
       var resp = await dispatch(req);
       expect(resp.headers.value("content-type"), contains("application/json"));
-      expect(conv.JSON.decode(resp.mockContent), {"key": "value"});
+      expect(conv.jsonDecode(resp.mockContent), {"key": "value"});
     });
 
     test("Shelf Response", () async {
@@ -190,7 +199,7 @@ void main() {
       var req = new MockRequest("/args/arg/1/1.2");
       var resp = await dispatch(req);
       expect(
-          conv.JSON.decode(resp.mockContent),
+          conv.jsonDecode(resp.mockContent),
           {
             "arg1": "arg",
             "arg2": 1,
@@ -204,7 +213,7 @@ void main() {
       var req = new MockRequest("/named_args/arg1/arg2");
       var resp = await dispatch(req);
       expect(
-          conv.JSON.decode(resp.mockContent),
+          conv.jsonDecode(resp.mockContent),
           
               {"arg1": "arg1", "arg2": "arg2", "arg3": null, "arg4": "arg4"});
     });
@@ -214,7 +223,7 @@ void main() {
           queryParameters: {"arg1": "arg1", "arg2": "1", "arg3": "1.2"});
       var resp = await dispatch(req);
       expect(
-          conv.JSON.decode(resp.mockContent),
+          conv.jsonDecode(resp.mockContent),
           {
             "arg1": "arg1",
             "arg2": 1,
@@ -237,7 +246,7 @@ void main() {
           });
       var resp = await dispatch(req);
       expect(
-          conv.JSON.decode(resp.mockContent),
+          conv.jsonDecode(resp.mockContent),
           {
             "arg1": ["a", "b", "c"],
             "arg2": [1, 2, 3],
@@ -251,7 +260,7 @@ void main() {
       var req = new MockRequest("/path_query_args/arg1",
           queryParameters: {"arg": "arg2"});
       var resp = await dispatch(req);
-      expect(conv.JSON.decode(resp.mockContent),
+      expect(conv.jsonDecode(resp.mockContent),
           {"arg": "arg1", "qArg": "arg2"});
     });
 
@@ -259,7 +268,7 @@ void main() {
       var req = new MockRequest("/query_args_with_num",
           queryParameters: {"arg1": "1", "arg2": "1.5"});
       var resp = await dispatch(req);
-      expect(conv.JSON.decode(resp.mockContent),
+      expect(conv.jsonDecode(resp.mockContent),
           {"arg1": 1, "arg2": 1.5,});
     });
 
@@ -268,7 +277,7 @@ void main() {
           queryParameters: {"arg1": "arg1", "arg2": "arg2"});
       var resp = await dispatch(req);
       expect(
-          conv.JSON.decode(resp.mockContent),
+          conv.jsonDecode(resp.mockContent),
           {
             "arg1": "arg1",
             "arg2": "arg2",
@@ -283,7 +292,7 @@ void main() {
       var req = new MockRequest("/path_query_args/arg1",
           queryParameters: {"arg": "arg2"});
       var resp = await dispatch(req);
-      expect(conv.JSON.decode(resp.mockContent),
+      expect(conv.jsonDecode(resp.mockContent),
           {"arg": "arg1", "qArg": "arg2"});
     });
 
@@ -292,7 +301,7 @@ void main() {
           method: POST, bodyType: JSON, body: {"key": "value"});
       var resp = await dispatch(req);
       expect(
-          conv.JSON.decode(resp.mockContent),
+          conv.jsonDecode(resp.mockContent),
           {
             "arg": "arg1",
             "json": {"key": "value"}
@@ -304,7 +313,7 @@ void main() {
           method: POST, bodyType: FORM, body: {"key": "value"});
       var resp = await dispatch(req);
       expect(
-          conv.JSON.decode(resp.mockContent),
+          conv.jsonDecode(resp.mockContent),
           {
             "arg": "arg1",
             "form": {"key": "value"}
@@ -315,7 +324,7 @@ void main() {
       var req = new MockRequest("/text/arg1",
           method: POST, bodyType: TEXT, body: "plain text");
       var resp = await dispatch(req);
-      expect(conv.JSON.decode(resp.mockContent),
+      expect(conv.jsonDecode(resp.mockContent),
           {"arg": "arg1", "text": "plain text"});
     });
 
@@ -327,7 +336,7 @@ void main() {
             "key": {"innerKey": "value"}
           });
       var resp = await dispatch(req);
-      expect(conv.JSON.decode(resp.mockContent), {"key": "value"});
+      expect(conv.jsonDecode(resp.mockContent), {"key": "value"});
     });
 
     test("request attributes", () async {
@@ -560,7 +569,7 @@ void main() {
     test("Response processor", () async {
       var req = new MockRequest("/user/find");
       var resp = await dispatch(req);
-      expect(conv.JSON.decode(resp.mockContent),
+      expect(conv.jsonDecode(resp.mockContent),
           {"name": "name", "username": "username"});
     });
 
