@@ -55,9 +55,6 @@ class Scanner {
         d.isImport &&
         _libCache.add(d.targetLibrary.simpleName) &&
         !blacklistSet.contains(d.targetLibrary.simpleName))) {
-      print(d.targetLibrary.simpleName);
-      print(d.location);
-      print(d.metadata);
       Install conf = null;
       var metadata = [];
       for (InstanceMirror m in d.metadata) {
